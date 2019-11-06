@@ -12,7 +12,7 @@ resource "azurerm_resource_group" "myterraformgroup" {
     location = "eastus"
 
     tags = {
-        environment = "Terraform Demo"
+        environment = "Prime Test Environment"
     }
 }
 
@@ -24,7 +24,7 @@ resource "azurerm_virtual_network" "myterraformnetwork" {
     resource_group_name = "${azurerm_resource_group.myterraformgroup.name}"
 
     tags = {
-        environment = "Terraform Demo"
+        environment = "Prime Test Environment"
     }
 }
 
@@ -44,7 +44,7 @@ resource "azurerm_public_ip" "myterraformpublicip" {
     allocation_method            = "Dynamic"
 
     tags = {
-        environment = "Terraform Demo"
+        environment = "Prime Test Environment"
     }
 }
 
@@ -67,7 +67,7 @@ resource "azurerm_network_security_group" "myterraformnsg" {
     }
 
     tags = {
-        environment = "Terraform Demo"
+        environment = "Prime Test Environment"
     }
 }
 
@@ -86,7 +86,7 @@ resource "azurerm_network_interface" "myterraformnic" {
     }
 
     tags = {
-        environment = "Terraform Demo"
+        environment = "Prime Test Environment"
     }
 }
 
@@ -109,13 +109,13 @@ resource "azurerm_storage_account" "mystorageaccount" {
     account_replication_type    = "LRS"
 
     tags = {
-        environment = "Terraform Demo"
+        environment = "Prime Test Environment"
     }
 }
 
 # Create virtual machine
 resource "azurerm_virtual_machine" "myterraformvm" {
-    name                  = "myVM"
+    name                  = "Prime_Machine"
     location              = "eastus"
     resource_group_name   = "${azurerm_resource_group.myterraformgroup.name}"
     network_interface_ids = ["${azurerm_network_interface.myterraformnic.id}"]
@@ -136,7 +136,7 @@ resource "azurerm_virtual_machine" "myterraformvm" {
     }
 
     os_profile {
-        computer_name  = "myvm"
+        computer_name  = "Prime_Machine"
         admin_username = "azureuser"
     }
 
@@ -154,6 +154,6 @@ resource "azurerm_virtual_machine" "myterraformvm" {
     }
 
     tags = {
-        environment = "Terraform Demo"
+        environment = "Prime Test Environment"
     }
 }
