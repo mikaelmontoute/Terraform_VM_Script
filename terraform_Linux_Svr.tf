@@ -1,3 +1,11 @@
+# Set Default Prefix
+variable "prefix" {
+  default = "FC-SVR"
+}
+variable "svr" {
+  default = "001"
+}
+
 # Configure the Microsoft Azure Provider
 provider "azurerm" {
     subscription_id = "38e7ce5f-1765-4b1a-a434-a093df9d8de8"
@@ -8,55 +16,76 @@ provider "azurerm" {
 
 # Create a resource group if it doesn’t exist
 resource "azurerm_resource_group" "myterraformgroup" {
-    name     = "Gen1_DevOps"
+    name     = "${var.prefix}-${var.svr}"
     location = "eastus"
 
     tags = {
-        environment = "Prime Test Environment"
+        environment = "${var.prefix}-${var.svr}-Test Environment"
     }
 }
 
 # Create virtual network
 resource "azurerm_virtual_network" "myterraformnetwork" {
-    name                = "myVnet"
-    address_space       = ["10.0.0.0/16"]
+    name                = "${var.prefix}-${var.svr}-Vnet"
+    address_space       = ["172.25.0.0/16"]
     location            = "eastus"
     resource_group_name = "${azurerm_resource_group.myterraformgroup.name}"
 
     tags = {
-        environment = "Prime Test Environment"
+        environment = "${var.prefix}-${var.svr}-Test Environment"
     }
 }
 
 # Create subnet
-resource "azurerm_subnet" "myterraformsubnet" {
-    name                 = "mySubnet"
+resource "azurerm_subnet" "FrontEndsubnet" {
+    name                 = "${var.prefix}-${var.svr}-FrontEnd-Subnet"
     resource_group_name  = "${azurerm_resource_group.myterraformgroup.name}"
     virtual_network_name = "${azurerm_virtual_network.myterraformnetwork.name}"
-    address_prefix       = "10.0.1.0/24"
+    address_prefix       = "172.25.0.0/27"
+}
+# Create subnet
+resource "azurerm_subnet" "Gatewaysubnet" {
+    name                 = "${var.prefix}-${var.svr}-Gateway-Subnet"
+    resource_group_name  = "${azurerm_resource_group.myterraformgroup.name}"
+    virtual_network_name = "${azurerm_virtual_network.myterraformnetwork.name}"
+    address_prefix       = "172.25.1.0/24"
+}
+# Create subnet
+resource "azurerm_subnet" "LANsubnet" {
+    name                 = "${var.prefix}-${var.svr}-LAN-Subnet"
+    resource_group_name  = "${azurerm_resource_group.myterraformgroup.name}"
+    virtual_network_name = "${azurerm_virtual_network.myterraformnetwork.name}"
+    address_prefix       = "172.25.2.0/24"
+}
+# Create subnet
+resource "azurerm_subnet" "Server-Networksubnet" {
+    name                 = "${var.prefix}-${var.svr}-Server-Network-Subnet"
+    resource_group_name  = "${azurerm_resource_group.myterraformgroup.name}"
+    virtual_network_name = "${azurerm_virtual_network.myterraformnetwork.name}"
+    address_prefix       = "172.25.3.0/24"
 }
 
 # Create public IPs
 resource "azurerm_public_ip" "myterraformpublicip" {
-    name                         = "myPublicIP"
+    name                         = "${var.prefix}-${var.svr}-PublicIP"
     location                     = "eastus"
     resource_group_name          = "${azurerm_resource_group.myterraformgroup.name}"
     allocation_method            = "Dynamic"
 
     tags = {
-        environment = "Prime Test Environment"
+        environment = "${var.prefix}-${var.svr}-Test Environment"
     }
 }
 
 # Create Network Security Group and rule
 resource "azurerm_network_security_group" "myterraformnsg" {
-    name                = "myNetworkSecurityGroup"
+    name                = "${var.prefix}-${var.svr}-NetworkSecurityGroup"
     location            = "eastus"
     resource_group_name = "${azurerm_resource_group.myterraformgroup.name}"
     
     security_rule {
         name                       = "SSH"
-        priority                   = 1001
+        priority                   = 300
         direction                  = "Inbound"
         access                     = "Allow"
         protocol                   = "Tcp"
@@ -67,26 +96,26 @@ resource "azurerm_network_security_group" "myterraformnsg" {
     }
 
     tags = {
-        environment = "Prime Test Environment"
+        environment = "${var.prefix}-${var.svr}-Test Environment"
     }
 }
 
 # Create network interface
 resource "azurerm_network_interface" "myterraformnic" {
-    name                      = "myNIC"
+    name                      = "${var.prefix}-${var.svr}-NIC"
     location                  = "eastus"
     resource_group_name       = "${azurerm_resource_group.myterraformgroup.name}"
     network_security_group_id = "${azurerm_network_security_group.myterraformnsg.id}"
 
     ip_configuration {
-        name                          = "myNicConfiguration"
-        subnet_id                     = "${azurerm_subnet.myterraformsubnet.id}"
+        name                          = "${var.prefix}-${var.svr}-NicConfiguration"
+        subnet_id                     = "${azurerm_subnet.Gatewaysubnet.id}"
         private_ip_address_allocation = "Dynamic"
         public_ip_address_id          = "${azurerm_public_ip.myterraformpublicip.id}"
     }
 
     tags = {
-        environment = "Prime Test Environment"
+        environment = "${var.prefix}-${var.svr}-Test Environment"
     }
 }
 
@@ -109,20 +138,20 @@ resource "azurerm_storage_account" "mystorageaccount" {
     account_replication_type    = "LRS"
 
     tags = {
-        environment = "Prime Test Environment"
+        environment = "${var.prefix}-${var.svr}-Test Environment"
     }
 }
 
 # Create virtual machine
 resource "azurerm_virtual_machine" "myterraformvm" {
-    name                  = "Prime_Machine"
+    name                  = "${var.prefix}-${var.svr}-VM"
     location              = "eastus"
     resource_group_name   = "${azurerm_resource_group.myterraformgroup.name}"
     network_interface_ids = ["${azurerm_network_interface.myterraformnic.id}"]
     vm_size               = "Standard_F4s"
 
     storage_os_disk {
-        name              = "myOsDisk"
+        name              = "${var.prefix}-${var.svr}-OsDisk"
         caching           = "ReadWrite"
         create_option     = "FromImage"
         managed_disk_type = "Premium_LRS"
@@ -136,16 +165,13 @@ resource "azurerm_virtual_machine" "myterraformvm" {
     }
 
     os_profile {
-        computer_name  = "Prime_Machine"
+        computer_name  = "${var.prefix}-${var.svr}-VM"
         admin_username = "azureuser"
+		admin_password = "Password1234!"
     }
 
     os_profile_linux_config {
-        disable_password_authentication = true
-        ssh_keys {
-            path     = "/home/azureuser/.ssh/authorized_keys"
-            key_data = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDD876nOF7iHEPfqiMR0bgWBuPQsNBgnV6wKbO/QZ9qPr+befC9lJ82u0uZJ6MRqRztljotCwVZaR/uyVbmsGGq+pXHgOC+SBLwZ+s5e2Uibv6ER0vpk/bU3Di8yzX9rIIQ/FYx1szeNYdxWRXd1PGrV5i5o+GcBY+Biw3LJL74OkTC1YN4yBTC/r0200yTzwoa+b6iIvwZb685aw1T1UixZPcBpMAJlO25UQCz4PGtzBGY5wwQRHEvcEl/Druq+SI6J5OWlhnEWQpQ/cj81EeMlWlKngNC0uW7uVlapYTt6Xw0NSv1GhlDAZPDQn3RRh1yN5eZ5pSwTOHRZtWNDx05 mmontoute@cc-9e8dc6ad-5574b6bb59-nv7nw"
-        }
+        disable_password_authentication = false
     }
 
     boot_diagnostics {
@@ -154,6 +180,6 @@ resource "azurerm_virtual_machine" "myterraformvm" {
     }
 
     tags = {
-        environment = "Prime Test Environment"
+        environment = "${var.prefix}-${var.svr}-Environment"
     }
 }
